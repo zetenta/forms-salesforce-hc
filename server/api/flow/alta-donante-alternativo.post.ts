@@ -94,7 +94,11 @@ export default defineEventHandler(async (event) => {
         };
       }
 
-      const oppExtra: Record<string, string | number | null> = {};
+      // Regla de validación de HC "Cargar_cuenta_o_contacto": la Opportunity
+      // necesita un Padrino (Nombre_del_contacto__c) o una Cuenta.
+      const oppExtra: Record<string, string | number | null> = {
+        Nombre_del_contacto__c: body.contactId,
+      };
       if (body.dni) {
         oppExtra["CUIT__c"] = body.dni;
       }
