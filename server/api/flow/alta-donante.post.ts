@@ -100,7 +100,7 @@ export default defineEventHandler(async (event) => {
       // `findOrCreateContact` para actualizar un Contact existente.
       const oppExtra: Record<string, string | number | null> = {};
       if (body.dni) {
-        oppExtra["Afip_CUIT_Nro_Documento__c"] = body.dni;
+        oppExtra["CUIT__c"] = body.dni;
       }
       if (body.alreadyDonor) {
         oppExtra["Observaciones__c"] = `¿Ya sos donante?: ${body.alreadyDonor}`;

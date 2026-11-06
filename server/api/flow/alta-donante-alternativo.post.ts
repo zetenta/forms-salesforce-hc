@@ -16,7 +16,7 @@ import type { DebiPaymentToken } from "~/composables/useDebiClient";
  *     quitá la línea `Tel_fono_fijo__c` abajo o Salesforce devuelve
  *     INVALID_FIELD y la respuesta es un 422.
  *   - El DNI/CUIT va a la Opportunity como
- *     `Afip_CUIT_Nro_Documento__c`.
+ *     `CUIT__c`.
  *
  * Este archivo es intencionalmente similar a `alta-donante.post.ts` —
  * sería fácil factorizar un helper compartido, pero mantenerlos como
@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
 
       const oppExtra: Record<string, string | number | null> = {};
       if (body.dni) {
-        oppExtra["Afip_CUIT_Nro_Documento__c"] = body.dni;
+        oppExtra["CUIT__c"] = body.dni;
       }
 
       const result = await createDonationChain({
