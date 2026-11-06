@@ -614,6 +614,16 @@ function todayPlusDays(days: number): string {
 }
 
 /**
+ * NPSP `npsp__Day_of_Month__c` for a monthly Recurring Donation, required by
+ * NPSP when the installment period is Monthly. Uses the sign-up day; the
+ * picklist only goes up to 28, so 29–31 map to `"Last_Day"`.
+ */
+function recurringDayOfMonth(): string {
+  const day = new Date().getUTCDate();
+  return day > 28 ? "Last_Day" : String(day);
+}
+
+/**
  * Creates the donation chain for an alta:
  *
  *   Contact (must exist) → Opportunity → [optional Recurring Donation] → Payment Method
@@ -656,6 +666,7 @@ export async function createDonationChain(input: {
         [map.recurring.amount]: input.amount,
         [map.recurring.paymentMethod]: paymentMethodId,
         npe03__Installment_Period__c: "Monthly",
+        npsp__Day_of_Month__c: recurringDayOfMonth(),
         npe03__Date_Established__c: todayPlusDays(0),
       };
       if (input.extra?.recurring) {
