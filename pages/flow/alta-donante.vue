@@ -161,8 +161,11 @@ async function onSubmit() {
     }
     successMessage.value = "¡Gracias por sumarte!";
   } catch (error) {
+    // $fetch lanza en respuestas 4xx/5xx: el mensaje real del backend
+    // viene en `error.data.message`, no en `error.message`.
     errorMessage.value =
-      error instanceof Error ? error.message : "No pudimos completar tu alta.";
+      (error as { data?: { message?: string } }).data?.message ??
+      (error instanceof Error ? error.message : "No pudimos completar tu alta.");
   } finally {
     isSubmitting.value = false;
   }
