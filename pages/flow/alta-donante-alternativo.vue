@@ -131,7 +131,7 @@ async function onSubmit() {
   isSubmitting.value = true;
   try {
     const res = await $fetch<{ error: boolean; message?: string }>(
-      "/api/flow/alta-reciduca",
+      "/api/flow/alta-donante-alternativo",
       {
         method: "POST",
         body: {
