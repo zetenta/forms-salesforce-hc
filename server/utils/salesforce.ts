@@ -523,7 +523,13 @@ const CONTACT_FIELDS = {
   birthDate: "Birthdate",
   country: "MailingCountry",
   province: "MailingState",
+  // NPSP "Preferred Phone" picklist. The HC org has a validation rule that
+  // rejects a Contact with a phone but no preferred phone selected.
+  preferredPhone: "npe01__PreferredPhone__c",
 } as const;
+
+/** Picklist value matching `CONTACT_FIELDS.phone` (`MobilePhone`). */
+const PREFERRED_PHONE_VALUE = "Mobile";
 
 /**
  * Opportunity defaults for new altas. `StageName` is required by Salesforce
@@ -574,6 +580,9 @@ export async function findOrCreateContact(input: {
       [CONTACT_FIELDS.email]: input.personal.email,
       [CONTACT_FIELDS.phone]: input.personal.phone,
     };
+    if (input.personal.phone) {
+      payload[CONTACT_FIELDS.preferredPhone] = PREFERRED_PHONE_VALUE;
+    }
     if (input.personal.birthDate) {
       payload[CONTACT_FIELDS.birthDate] = input.personal.birthDate;
     }
