@@ -11,12 +11,11 @@ import type { DebiPaymentToken } from "~/composables/useDebiClient";
  *
  * Misma estructura de dos stages que `alta-donante.post.ts`. Las diferencias:
  *
- *   - El campo `phoneFixed` se escribe en el Contact como `Tel_fono_fijo__c`,
- *     un custom field. **Si tu org de Salesforce no tiene ese campo**,
- *     quitá la línea `Tel_fono_fijo__c` abajo o Salesforce devuelve
- *     INVALID_FIELD y la respuesta es un 422.
- *   - El DNI/CUIT va a la Opportunity como
- *     `CUIT__c`.
+ *   - El campo `phoneFixed` se escribe en el Contact como `HomePhone`
+ *     (campo estándar).
+ *   - El DNI/CUIT lo escribe `createDonationChain` en el Contact
+ *     (`N_de_documento__c` / `CUIT__c`) y, si es única vez, en la
+ *     Opportunity (`CUIT__c`).
  *
  * Este archivo es intencionalmente similar a `alta-donante.post.ts` —
  * sería fácil factorizar un helper compartido, pero mantenerlos como
@@ -57,8 +56,7 @@ export default defineEventHandler(async (event) => {
         };
       }
       const extra: Record<string, string> = {};
-      if (body.phoneFixed) extra.Tel_fono_fijo__c = body.phoneFixed;
-      if (body.campaign) extra.TCPagos__Campa_a__c = body.campaign;
+      if (body.phoneFixed) extra.HomePhone = body.phoneFixed;
 
       const { contactId } = await findOrCreateContact({
         personal: p,
@@ -94,22 +92,13 @@ export default defineEventHandler(async (event) => {
         };
       }
 
-      // Regla de validación de HC "Cargar_cuenta_o_contacto": la Opportunity
-      // necesita un Padrino (Nombre_del_contacto__c) o una Cuenta.
-      const oppExtra: Record<string, string | number | null> = {
-        Nombre_del_contacto__c: body.contactId,
-      };
-      if (body.dni) {
-        oppExtra["CUIT__c"] = body.dni;
-      }
-
       const result = await createDonationChain({
         contactId: body.contactId,
         amount: body.amount,
         frequency: body.frequency,
         paymentMethodToken: body.paymentMethodToken,
         campaign: body.campaign ?? null,
-        extra: { opportunity: oppExtra },
+        documentNumber: body.dni ?? null,
       });
 
       return { error: false, data: result };

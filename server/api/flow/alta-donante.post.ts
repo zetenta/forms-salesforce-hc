@@ -19,8 +19,8 @@ import type { DebiPaymentToken } from "~/composables/useDebiClient";
  *   `stage: "finalize"` (después del paso 2 / submit final)
  *     Tokeniza el método de pago (ya hecho client-side), luego crea
  *     la cadena de donación: Payment Method → Recurring Donation
- *     opcional → Opportunity. El Contact ya debe existir (su ID viene
- *     del paso 1).
+ *     (mensual) u Opportunity (única vez). El Contact ya debe existir
+ *     (su ID viene del paso 1).
  *
  * Si tu alta solo necesita un submit (sin write por paso), quitá el
  * branch `stage: "personal"` y llamá a `findOrCreateContact` desde
@@ -59,12 +59,7 @@ export default defineEventHandler(async (event) => {
           message: "Faltan datos personales obligatorios.",
         };
       }
-      const { contactId } = await findOrCreateContact({
-        personal: p,
-        extra: body.campaign
-          ? { TCPagos__Campa_a__c: body.campaign } as Record<string, string>
-          : undefined,
-      });
+      const { contactId } = await findOrCreateContact({ personal: p });
       return { error: false, data: { contactId } };
     }
 
@@ -95,19 +90,13 @@ export default defineEventHandler(async (event) => {
         };
       }
 
-      // Campos extra: escribimos DNI + "alreadyDonor" en la Opportunity.
-      // Si los querés en el Contact, mové esto a `extra.contact` y ajustá
-      // `findOrCreateContact` para actualizar un Contact existente.
-      // Regla de validación de HC "Cargar_cuenta_o_contacto": la Opportunity
-      // necesita un Padrino (Nombre_del_contacto__c) o una Cuenta.
-      const oppExtra: Record<string, string | number | null> = {
-        Nombre_del_contacto__c: body.contactId,
-      };
-      if (body.dni) {
-        oppExtra["CUIT__c"] = body.dni;
-      }
+      // El DNI/CUIT lo escribe `createDonationChain` en el Contact (y en la
+      // Opportunity si es única vez). "alreadyDonor" va al Contact porque
+      // las altas mensuales no crean Opportunity.
+      const contactExtra: Record<string, string> = {};
       if (body.alreadyDonor) {
-        oppExtra["Observaciones__c"] = `¿Ya sos donante?: ${body.alreadyDonor}`;
+        contactExtra["Observaciones_proceso_de_Ingreso__c"] =
+          `¿Ya sos donante?: ${body.alreadyDonor}`;
       }
 
       const result = await createDonationChain({
@@ -116,7 +105,8 @@ export default defineEventHandler(async (event) => {
         frequency: body.frequency,
         paymentMethodToken: body.paymentMethodToken,
         campaign: body.campaign ?? null,
-        extra: { opportunity: oppExtra },
+        documentNumber: body.dni ?? null,
+        extra: { contact: contactExtra },
       });
 
       return { error: false, data: result };
