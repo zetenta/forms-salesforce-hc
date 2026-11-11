@@ -117,7 +117,11 @@ export default defineEventHandler(async (event) => {
     return { error: true, message: "Stage desconocido." };
   } catch (error) {
     // Queda en los logs de Vercel para depurar errores de Salesforce.
-    console.error("[alta-donante-alternativo]", error);
+    console.error(
+      "[alta-donante-alternativo]",
+      { org: useRuntimeConfig().sfInstanceUrl },
+      error,
+    );
     if (error instanceof FlowRequestError) {
       setResponseStatus(event, error.status);
       return { error: true, message: error.message };
