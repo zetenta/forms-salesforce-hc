@@ -62,6 +62,11 @@ export default defineEventHandler(async (event) => {
         personal: p,
         extra: Object.keys(extra).length > 0 ? extra : undefined,
       });
+      // Org e Ids en los logs de Vercel, para ubicar los registros de prueba.
+      console.log("[alta-donante-alternativo] personal", {
+        org: useRuntimeConfig().sfInstanceUrl,
+        contactId,
+      });
       return { error: false, data: { contactId } };
     }
 
@@ -101,6 +106,10 @@ export default defineEventHandler(async (event) => {
         documentNumber: body.dni ?? null,
       });
 
+      console.log("[alta-donante-alternativo] finalize", {
+        org: useRuntimeConfig().sfInstanceUrl,
+        ...result,
+      });
       return { error: false, data: result };
     }
 
