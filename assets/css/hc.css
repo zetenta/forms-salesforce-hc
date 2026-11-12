@@ -1,0 +1,249 @@
+/*
+  Marca de Haciendo Camino para /donar (se importa solo desde pages/donar.vue).
+  Colores, tipografías y medidas copiados del theme de WordPress
+  (`haciendocamino/assets/sass/components/_donar-form.scss` y `_colors.scss`).
+*/
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/bricolage-grotesque-v9-latin-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/bricolage-grotesque-v9-latin-800.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Source Sans 3";
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/source-sans-3-v19-latin-regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Source Sans 3";
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/source-sans-3-v19-latin-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Source Sans 3";
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/source-sans-3-v19-latin-700.woff2") format("woff2");
+}
+
+/* El formulario siempre va en claro, aunque el sistema esté en modo oscuro. */
+html:has(.hc-donar),
+html:has(.hc-donar) body {
+  --background: #ffffff;
+  --foreground: #303030;
+  background: transparent;
+  color: #303030;
+  color-scheme: light;
+}
+
+.hc-donar {
+  --hc-white: #fff;
+  --hc-dark: #303030;
+  --hc-red: #bc2829;
+  --hc-green: #62bda6;
+  --hc-green-dark: #3f9a83;
+  --hc-blue: #4da0d9;
+  --hc-orange: #eb5c37;
+  --hc-sand: #fae3c5;
+  --hc-coin: #f9b233;
+  --hc-gray: #ededed;
+  --hc-muted: #8c8c8c;
+  --hc-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --hc-display: "Bricolage Grotesque", "Source Sans 3", sans-serif;
+
+  position: relative;
+  width: 100%;
+  /* Deja lugar para los anillos de foco sin que el iframe los recorte. */
+  padding: 6px;
+  color: var(--hc-dark);
+  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hc-donar *,
+.hc-donar *::before,
+.hc-donar *::after {
+  box-sizing: border-box;
+}
+
+.hc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Campos ---------- */
+.hc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.hc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.hc-row--narrow-first {
+  grid-template-columns: 0.8fr 1.2fr;
+}
+@media (max-width: 340px) {
+  .hc-row,
+  .hc-row--narrow-first {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hc-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hc-input {
+  width: 100%;
+  height: 3rem;
+  padding: 0 1rem;
+  background: var(--hc-white);
+  color: var(--hc-dark);
+  border: 1px solid var(--hc-dark);
+  border-radius: 0.5rem;
+  font-family: inherit;
+  font-size: 1rem; /* 16px: evita el zoom de iOS */
+  caret-color: var(--hc-coin);
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.hc-input::placeholder {
+  color: var(--hc-muted);
+}
+.hc-input:hover {
+  border-color: var(--hc-red);
+}
+.hc-input:focus-visible {
+  outline: none;
+  border-color: var(--hc-red);
+  box-shadow: 0 0 0 3px rgb(188 40 41 / 0.25);
+}
+.hc-input[aria-invalid="true"] {
+  border-color: var(--hc-red);
+  box-shadow: 0 0 0 3px rgb(188 40 41 / 0.18);
+  animation: hc-shake 0.35s ease;
+}
+.hc-input:disabled {
+  opacity: 0.6;
+}
+
+.hc-select {
+  position: relative;
+}
+.hc-select select {
+  appearance: none;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+.hc-select::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid var(--hc-dark);
+  border-bottom: 2px solid var(--hc-dark);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+.hc-error {
+  margin: 0;
+  color: var(--hc-red);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  animation: hc-rise 0.3s var(--hc-ease) both;
+}
+
+.hc-alert {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: rgb(188 40 41 / 0.08);
+  border-left: 4px solid var(--hc-red);
+  border-radius: 0.5rem;
+  color: var(--hc-red);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  animation: hc-rise 0.3s var(--hc-ease) both;
+}
+
+/* ---------- Acciones ---------- */
+.hc-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+.hc-actions--single {
+  grid-template-columns: 1fr;
+  margin-top: 1rem;
+}
+@media (max-width: 375px) {
+  .hc-actions {
+    gap: 0.5rem;
+  }
+}
+
+.hc-legal {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+.hc-legal a {
+  color: inherit;
+}
+
+@keyframes hc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes hc-shake {
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hc-donar *,
+  .hc-donar *::before,
+  .hc-donar *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

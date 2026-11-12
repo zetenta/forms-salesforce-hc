@@ -6,6 +6,15 @@ import tailwindcss from "@tailwindcss/vite";
 // `<ThemeSwitcher>` component.
 const THEME_INIT_SCRIPT = `(function(){try{var k="forms-org-theme";var s=localStorage.getItem(k);var d=document.documentElement;if(s==="light"||s==="dark"){d.setAttribute("data-theme",s);return;}d.setAttribute("data-theme",window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");}catch(e){}})();`;
 
+// Sitios que pueden mostrar el formulario en un iframe (CSP frame-ancestors).
+const FRAME_ANCESTORS = [
+  "'self'",
+  "https://haciendocamino.org.ar",
+  "https://www.haciendocamino.org.ar",
+  "https://dev.zetenta.com",
+  "http://localhost:*",
+].join(" ");
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-01-01",
   devtools: { enabled: true },
@@ -55,7 +64,9 @@ export default defineNuxtConfig({
   routeRules: {
     "/**": {
       headers: {
-        "Content-Security-Policy": "frame-ancestors *",
+        // HC: solo el sitio de Haciendo Camino, el staging de Zetenta y
+        // localhost (desarrollo) pueden embeber el formulario.
+        "Content-Security-Policy": `frame-ancestors ${FRAME_ANCESTORS}`,
       },
     },
   },
