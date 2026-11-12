@@ -109,8 +109,9 @@ function mount() {
     strict: true,
     methods: {
       card: {
-        expiration: HC_CARD_EXTRA_FIELDS,
-        securityCode: HC_CARD_EXTRA_FIELDS,
+        ...(HC_CARD_EXTRA_FIELDS === "auto"
+          ? {}
+          : { expiration: HC_CARD_EXTRA_FIELDS, securityCode: HC_CARD_EXTRA_FIELDS }),
         text: CARD_TEXT,
       },
       cbu: { text: CBU_TEXT },
@@ -179,7 +180,10 @@ async function confirm() {
   try {
     const { token, error } = await debi.confirmPaymentMethod(element);
     if (error || !token) {
-      fieldError.value = friendly(error?.message);
+      // Los errores de validación ya los muestra Debi debajo del campo; acá
+      // solo los de red o desconocidos, para no repetir el mensaje.
+      const message = friendly(error?.message);
+      fieldError.value = message === error?.message ? null : message;
       element.focus();
       return;
     }

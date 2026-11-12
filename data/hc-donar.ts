@@ -44,11 +44,13 @@ export const HC_DOCUMENT_TYPES = ["DNI", "CUIT", "CUIL", "Pasaporte"] as const;
 export type HcDocumentType = (typeof HC_DOCUMENT_TYPES)[number];
 
 /**
- * Vencimiento y código de seguridad de la tarjeta. Debi cobra el débito
- * recurrente solo con el número, por eso el template los oculta. El diseño los
- * muestra: definir con Debi y, si van, pasar a "optional" o "required".
+ * Vencimiento y código de seguridad de la tarjeta.
+ *   - "auto": los pide si la cuenta de Debi los exige (`card.required_fields`).
+ *     La cuenta test los exige; si no se mandan, Debi rechaza la tarjeta.
+ *   - "hidden" / "optional" / "required": fuerza ese comportamiento.
+ * El template de Debi los ocultaba porque el débito recurrente solo usa el número.
  */
-export const HC_CARD_EXTRA_FIELDS: "hidden" | "optional" | "required" = "hidden";
+export const HC_CARD_EXTRA_FIELDS: "auto" | "hidden" | "optional" | "required" = "auto";
 
 export const HC_RECEIPTS_EMAIL = "recibos@haciendocamino.org.ar";
 
