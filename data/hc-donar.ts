@@ -21,7 +21,8 @@ export interface HcPreset {
 
 /**
  * Montos sugeridos por frecuencia. Hoy son los mismos para las dos (falta que
- * HC confirme si cambian). `HC_DEFAULT_AMOUNT` es el que arranca elegido.
+ * HC confirme si cambian). `HC_DEFAULT_AMOUNT` es el que arranca elegido
+ * (null: ninguno, el donante tiene que elegir).
  */
 const PRESETS: HcPreset[] = [
   { value: 10000, color: "green", description: "Ayudás a llevar nutrición y acompañamiento a un niño/a." },
@@ -34,7 +35,7 @@ export const HC_PRESETS: Record<HcFrequency, HcPreset[]> = {
   "Única vez": PRESETS,
 };
 
-export const HC_DEFAULT_AMOUNT = 38000;
+export const HC_DEFAULT_AMOUNT: number | null = null;
 export const HC_CUSTOM_DESCRIPTION = "Ayudás a llegar a más familias.";
 
 /** Mínimo de "otro monto" (el del flujo original; falta que HC lo confirme). */

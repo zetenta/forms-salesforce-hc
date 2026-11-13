@@ -17,7 +17,8 @@ import {
 
 export interface HcAmountData {
   frequency: HcFrequency;
-  choice: number | "otro";
+  /** null: todavía no eligió */
+  choice: number | "otro" | null;
   custom: string;
 }
 
@@ -29,6 +30,7 @@ const emit = defineEmits<{
 
 const presets = computed(() => HC_PRESETS[props.modelValue.frequency]);
 const customError = ref<string | null>(null);
+const choiceError = ref<string | null>(null);
 const customInput = ref<HTMLInputElement | null>(null);
 const amountsEl = ref<HTMLElement | null>(null);
 const burst = ref<InstanceType<typeof HcBurst> | null>(null);
@@ -46,6 +48,7 @@ function choose(choice: number | "otro", event?: Event) {
   const changed = choice !== props.modelValue.choice;
   update({ choice });
   customError.value = null;
+  choiceError.value = null;
   if (choice === "otro") {
     nextTick(() => customInput.value?.focus());
   }
@@ -72,12 +75,18 @@ function onCustomInput(e: Event) {
 
 /** Monto elegido como número, o null si "otro monto" está vacío. */
 const amount = computed<number | null>(() => {
+  if (props.modelValue.choice === null) return null;
   if (props.modelValue.choice !== "otro") return props.modelValue.choice;
   const n = Number(props.modelValue.custom.replace(/\D/g, ""));
   return n > 0 ? n : null;
 });
 
 function submit() {
+  if (props.modelValue.choice === null) {
+    choiceError.value = "Elegí el monto que querés donar.";
+    amountsEl.value?.querySelector<HTMLInputElement>("input[type=radio]")?.focus();
+    return;
+  }
   if (props.modelValue.choice === "otro") {
     if (!amount.value) {
       customError.value = "Ingresá el monto que querés donar.";
@@ -206,6 +215,10 @@ function onKeyTabs(e: KeyboardEvent) {
           <p v-if="customError" :id="`${uid}-otro-err`" class="hc-error">{{ customError }}</p>
         </div>
       </Transition>
+
+      <p v-if="choiceError" :id="`${uid}-monto-err`" class="hc-error hc-amount__error" role="alert">
+        {{ choiceError }}
+      </p>
 
       <HcBurst ref="burst" />
     </fieldset>
@@ -387,6 +400,10 @@ function onKeyTabs(e: KeyboardEvent) {
 }
 .hc-amount__row:has(input:checked) .hc-amount__desc {
   font-weight: 700;
+}
+
+.hc-amount__error {
+  margin: 0.25rem 0.5rem 0;
 }
 
 /* Otro monto */

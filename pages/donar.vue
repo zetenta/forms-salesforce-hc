@@ -72,6 +72,7 @@ const live = ref("");
 
 const amountValue = computed(() => {
   const a = amount.value;
+  if (a.choice === null) return 0;
   if (a.choice !== "otro") return a.choice;
   return Number(a.custom.replace(/\D/g, "")) || 0;
 });
