@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Cierre del formulario.
- *   - `phase="loading"`: "Por favor aguarde" con un corazón que se dibuja.
+ *   - `phase="loading"`: "Estamos procesando tu donación…" con un corazón que
+ *     se dibuja y cambia de color en cada vuelta.
  *   - `phase="success"`: el corazón se rellena, crece hasta cubrir todo y
  *     queda la pantalla de gracias (corazón blanco, título y huellas).
  */
@@ -34,7 +35,7 @@ watch(
       </svg>
     </div>
 
-    <p v-if="phase === 'loading'" class="hc-finale__wait" role="status">Por favor aguarde</p>
+    <p v-if="phase === 'loading'" class="hc-finale__wait" role="status">Estamos procesando tu donación…</p>
 
     <template v-else>
       <div class="hc-thanks" aria-hidden="true">
@@ -85,7 +86,10 @@ watch(
   stroke-width: 6;
   stroke-linecap: round;
   stroke-dasharray: 34 66;
-  animation: hc-trace 1.1s linear infinite;
+  /* Una vuelta dura 1.1s; el color cambia al empezar cada vuelta (4 colores). */
+  animation:
+    hc-trace 1.1s linear infinite,
+    hc-colors 4.4s step-end infinite;
 }
 
 .hc-finale__fill {
@@ -96,7 +100,9 @@ watch(
 .hc-finale__wait {
   position: relative;
   margin: 3.25rem 0 0;
+  padding: 0 1rem;
   color: var(--hc-green);
+  text-align: center;
   font-family: var(--hc-display);
   font-size: 1.25rem;
   font-weight: 700;
@@ -108,6 +114,8 @@ watch(
   animation: hc-bg 0.01s linear 0.85s both;
 }
 .is-success .hc-finale__stroke {
+  stroke: var(--hc-green);
+  transition: stroke 0.2s ease;
   animation: hc-trace-close 0.3s ease-out forwards;
 }
 .is-success .hc-finale__fill {
@@ -203,6 +211,20 @@ watch(
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+@keyframes hc-colors {
+  0% {
+    stroke: var(--hc-green);
+  }
+  25% {
+    stroke: var(--hc-blue);
+  }
+  50% {
+    stroke: var(--hc-orange);
+  }
+  75% {
+    stroke: var(--hc-red);
   }
 }
 @keyframes hc-trace-close {

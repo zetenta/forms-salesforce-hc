@@ -146,7 +146,7 @@ async function finalize(token: DebiPaymentToken) {
   }
   finaleHeight.value = root.value?.querySelector(".hc-stage")?.getBoundingClientRect().height ?? null;
   finale.value = "loading";
-  live.value = "Procesando tu donación, por favor aguarde.";
+  live.value = "Estamos procesando tu donación…";
   try {
     const res = await $fetch<{ error: boolean; message?: string }>(ENDPOINT, {
       method: "POST",
