@@ -15,6 +15,8 @@
  *   { type: "hc-donar:success", amount, frequency }
  *
  * Configuración (montos, textos, documento, etc.): `data/hc-donar.ts`.
+ * Parámetros de la URL: `campaign` (Id de campaña) y `montos`
+ * ("50000,38000,25000", los cargan en WordPress).
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId } from "vue";
 import "~/assets/css/hc.css";
@@ -24,7 +26,7 @@ import HcPaymentStep from "~/components/hc/HcPaymentStep.vue";
 import HcSummary from "~/components/hc/HcSummary.vue";
 import HcFinale from "~/components/hc/HcFinale.vue";
 import type { DebiPaymentToken } from "~/composables/useDebiClient";
-import { HC_DEFAULT_AMOUNT } from "~/data/hc-donar";
+import { HC_DEFAULT_AMOUNT, hcPresets } from "~/data/hc-donar";
 
 definePageMeta({ embed: true });
 
@@ -42,6 +44,11 @@ const route = useRoute();
 const campaign = computed(() => {
   const q = route.query.campaign;
   return (Array.isArray(q) ? String(q[0] ?? "") : String(q ?? "")).trim();
+});
+/** Montos sugeridos: los manda WordPress (opciones ACF) en `?montos=`. */
+const presets = computed(() => {
+  const q = route.query.montos;
+  return hcPresets(Array.isArray(q) ? q[0] : q);
 });
 
 const step = ref<Step>("monto");
@@ -216,7 +223,7 @@ onBeforeUnmount(() => observer?.disconnect());
         @after-enter="sliding = false"
         @enter-cancelled="sliding = false"
       >
-        <HcAmountStep v-if="step === 'monto'" key="monto" v-model="amount" :uid="uid" @next="go('datos')" />
+        <HcAmountStep v-if="step === 'monto'" key="monto" v-model="amount" :uid="uid" :presets="presets" @next="go('datos')" />
 
         <HcPersonalStep
           v-else-if="step === 'datos'"

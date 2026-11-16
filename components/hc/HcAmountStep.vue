@@ -10,9 +10,9 @@ import {
   HC_CUSTOM_DESCRIPTION,
   HC_FREQUENCIES,
   HC_MIN_AMOUNT,
-  HC_PRESETS,
   formatHcMoney,
   type HcFrequency,
+  type HcPreset,
 } from "~/data/hc-donar";
 
 export interface HcAmountData {
@@ -22,13 +22,11 @@ export interface HcAmountData {
   custom: string;
 }
 
-const props = defineProps<{ modelValue: HcAmountData; uid: string }>();
+const props = defineProps<{ modelValue: HcAmountData; uid: string; presets: HcPreset[] }>();
 const emit = defineEmits<{
   "update:modelValue": [value: HcAmountData];
   next: [];
 }>();
-
-const presets = computed(() => HC_PRESETS[props.modelValue.frequency]);
 const customError = ref<string | null>(null);
 const choiceError = ref<string | null>(null);
 const customInput = ref<HTMLInputElement | null>(null);

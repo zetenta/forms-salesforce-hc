@@ -20,20 +20,35 @@ export interface HcPreset {
 }
 
 /**
- * Montos sugeridos por frecuencia. Hoy son los mismos para las dos (falta que
- * HC confirme si cambian). `HC_DEFAULT_AMOUNT` es el que arranca elegido
- * (null: ninguno, el donante tiene que elegir).
+ * Montos sugeridos, de mayor a menor (los mismos para las dos frecuencias).
+ * Color y descripción van con la posición: los valores los puede pisar el
+ * sitio de WordPress con `?montos=50000,38000,25000` (opciones ACF, se
+ * actualizan cada 4 meses); ver `hcPresets`.
+ * `HC_DEFAULT_AMOUNT` es el que arranca elegido (null: ninguno).
  */
-const PRESETS: HcPreset[] = [
-  { value: 10000, color: "green", description: "Ayudás a llevar nutrición y acompañamiento a un niño/a." },
-  { value: 38000, color: "blue", description: "Ayudás a sostener el acompañamiento de una familia." },
+export const HC_PRESETS: HcPreset[] = [
   { value: 50000, color: "orange", description: "Ayudás a que más niños/as reciban atención y seguimiento." },
+  { value: 38000, color: "blue", description: "Ayudás a sostener el acompañamiento de una familia." },
+  { value: 25000, color: "green", description: "Ayudás a llevar nutrición y acompañamiento a un niño/a." },
 ];
 
-export const HC_PRESETS: Record<HcFrequency, HcPreset[]> = {
-  Mensual: PRESETS,
-  "Única vez": PRESETS,
-};
+/** Tope de seguridad para los montos que llegan por URL. */
+const HC_MAX_PRESET = 10_000_000;
+
+/**
+ * Montos sugeridos a partir del parámetro `montos` de la URL
+ * ("50000,38000,25000"). Si falta o no es válido (cantidad distinta, no
+ * numérico, repetido, menor al mínimo) se usan los de `HC_PRESETS`.
+ */
+export function hcPresets(param: string | null | undefined): HcPreset[] {
+  if (!param) return HC_PRESETS;
+  const values = param.split(",").map((v) => Number(v.trim()));
+  const valid =
+    values.length === HC_PRESETS.length &&
+    new Set(values).size === values.length &&
+    values.every((v) => Number.isInteger(v) && v >= HC_MIN_AMOUNT && v <= HC_MAX_PRESET);
+  return valid ? HC_PRESETS.map((p, i) => ({ ...p, value: values[i] })) : HC_PRESETS;
+}
 
 export const HC_DEFAULT_AMOUNT: number | null = null;
 export const HC_CUSTOM_DESCRIPTION = "Ayudás a llegar a más familias.";
