@@ -61,12 +61,13 @@ export type HcDocumentType = (typeof HC_DOCUMENT_TYPES)[number];
 
 /**
  * Vencimiento y código de seguridad de la tarjeta.
- *   - "auto": los pide si la cuenta de Debi los exige (`card.required_fields`).
- *     La cuenta test los exige; si no se mandan, Debi rechaza la tarjeta.
- *   - "hidden" / "optional" / "required": fuerza ese comportamiento.
- * El template de Debi los ocultaba porque el débito recurrente solo usa el número.
+ * HC decidió no pedirlos (19/11): el débito recurrente solo usa el número, y
+ * Debi tokeniza igual (probado en la cuenta test con 4242…, 201 sin vencimiento).
+ *   - "hidden": no se muestran ni se mandan (lo que usa HC).
+ *   - "auto": los pide si la cuenta de Debi los marca en `card.required_fields`.
+ *   - "optional" / "required": fuerza ese comportamiento.
  */
-export const HC_CARD_EXTRA_FIELDS: "auto" | "hidden" | "optional" | "required" = "auto";
+export const HC_CARD_EXTRA_FIELDS: "auto" | "hidden" | "optional" | "required" = "hidden";
 
 export const HC_RECEIPTS_EMAIL = "recibos@haciendocamino.org.ar";
 
