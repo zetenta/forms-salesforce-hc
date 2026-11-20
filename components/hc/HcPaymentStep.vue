@@ -2,6 +2,8 @@
 /**
  * Paso 3 · Pago: tabs "Tarjeta crédito/débito" / "Transferencia" (débito por
  * CBU), campos de Debi Elements, texto legal y "Confirmar donación".
+ * Los medios que se ofrecen salen de `HC_PAYMENT_METHODS`; con uno solo, en
+ * vez de tabs se muestra su título.
  *
  * Los campos los dibuja el SDK de Debi en este mismo documento; el estilo va
  * por `appearance` (variables + rules), nunca tocando sus clases. Cada tab
@@ -18,12 +20,17 @@ import {
   type DebiPaymentMethodType,
   type DebiPaymentToken,
 } from "~/composables/useDebiClient";
-import { HC_CARD_EXTRA_FIELDS, HC_RECEIPTS_EMAIL } from "~/data/hc-donar";
+import { HC_CARD_EXTRA_FIELDS, HC_PAYMENT_METHODS, HC_RECEIPTS_EMAIL } from "~/data/hc-donar";
 
 defineProps<{ uid: string; serverError?: string | null; busy?: boolean }>();
 const emit = defineEmits<{ confirm: [token: DebiPaymentToken]; back: [] }>();
 
-const method = ref<DebiPaymentMethodType>("card");
+const METHOD_LABELS: Record<"card" | "cbu", string> = {
+  card: "Tarjeta crédito/débito",
+  cbu: "Transferencia",
+};
+const methods: ("card" | "cbu")[] = HC_PAYMENT_METHODS.length ? HC_PAYMENT_METHODS : ["card"];
+const method = ref<DebiPaymentMethodType>(methods[0]);
 const mountTarget = ref<HTMLDivElement | null>(null);
 const fieldError = ref<string | null>(null);
 const sdkError = ref<string | null>(null);
@@ -154,7 +161,9 @@ function selectMethod(type: DebiPaymentMethodType) {
 
 function onKeyTabs(e: KeyboardEvent) {
   if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-  const next = method.value === "card" ? "cbu" : "card";
+  if (methods.length < 2) return;
+  const i = methods.indexOf(method.value as "card" | "cbu");
+  const next = methods[(i + (e.key === "ArrowRight" ? 1 : -1) + methods.length) % methods.length];
   selectMethod(next);
   nextTick(() => document.getElementById(`${(e.currentTarget as HTMLElement).dataset.uid}-pm-${next}`)?.focus());
 }
@@ -201,36 +210,33 @@ async function confirm() {
     <h2 class="hc-sr">Método de pago</h2>
     <slot name="summary" />
 
-    <div class="hc-methods" role="tablist" aria-label="Método de pago" :data-uid="uid" @keydown="onKeyTabs">
-      <button
-        :id="`${uid}-pm-card`"
-        type="button"
-        role="tab"
+    <div
+      :class="['hc-methods', methods.length < 2 && 'is-single']"
+      :role="methods.length > 1 ? 'tablist' : undefined"
+      :aria-label="methods.length > 1 ? 'Método de pago' : undefined"
+      :style="{ '--n': methods.length, '--i': methods.indexOf(method as 'card' | 'cbu') }"
+      :data-uid="uid"
+      @keydown="onKeyTabs"
+    >
+      <component
+        :is="methods.length > 1 ? 'button' : 'p'"
+        v-for="m in methods"
+        :id="`${uid}-pm-${m}`"
+        :key="m"
+        :type="methods.length > 1 ? 'button' : undefined"
+        :role="methods.length > 1 ? 'tab' : undefined"
         class="hc-methods__tab"
-        :aria-selected="method === 'card'"
-        :aria-controls="`${uid}-pm-panel`"
-        :tabindex="method === 'card' ? 0 : -1"
-        :disabled="busy"
-        @click="selectMethod('card')"
+        :aria-selected="methods.length > 1 ? method === m : undefined"
+        :aria-controls="methods.length > 1 ? `${uid}-pm-panel` : undefined"
+        :tabindex="methods.length > 1 ? (method === m ? 0 : -1) : undefined"
+        :disabled="methods.length > 1 ? busy : undefined"
+        @click="methods.length > 1 && selectMethod(m)"
       >
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <svg v-if="m === 'card'" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <rect x="2.5" y="5" width="19" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8" />
           <path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.8" />
         </svg>
-        Tarjeta crédito/débito
-      </button>
-      <button
-        :id="`${uid}-pm-cbu`"
-        type="button"
-        role="tab"
-        class="hc-methods__tab"
-        :aria-selected="method === 'cbu'"
-        :aria-controls="`${uid}-pm-panel`"
-        :tabindex="method === 'cbu' ? 0 : -1"
-        :disabled="busy"
-        @click="selectMethod('cbu')"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <svg v-else viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path
             d="M3 9.5 12 4l9 5.5M5 10v7m4-7v7m6-7v7m4-7v7M3 20h18"
             fill="none"
@@ -240,15 +246,15 @@ async function confirm() {
             stroke-linejoin="round"
           />
         </svg>
-        Transferencia
-      </button>
-      <i class="hc-methods__bar" :data-active="method" aria-hidden="true"></i>
+        {{ METHOD_LABELS[m] }}
+      </component>
+      <i class="hc-methods__bar" aria-hidden="true"></i>
     </div>
 
     <div
       :id="`${uid}-pm-panel`"
       :key="method"
-      role="tabpanel"
+      :role="methods.length > 1 ? 'tabpanel' : undefined"
       :aria-labelledby="`${uid}-pm-${method}`"
       class="hc-payment__panel"
     >
@@ -290,8 +296,19 @@ async function confirm() {
 .hc-methods {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(var(--n, 2), 1fr);
   border-bottom: 4px solid var(--hc-gray);
+}
+/* Un solo medio: es un título, no una tab. */
+.hc-methods.is-single .hc-methods__tab {
+  justify-content: flex-start;
+  margin: 0;
+  padding-inline: 0;
+  color: var(--hc-dark);
+  cursor: default;
+}
+.hc-methods.is-single .hc-methods__tab svg {
+  color: var(--hc-red);
 }
 
 .hc-methods__tab {
@@ -333,13 +350,11 @@ async function confirm() {
   position: absolute;
   left: 0;
   bottom: -4px;
-  width: 50%;
+  width: calc(100% / var(--n, 2));
   height: 4px;
   background: var(--hc-red);
+  transform: translateX(calc(100% * var(--i, 0)));
   transition: transform 0.4s var(--hc-ease);
-}
-.hc-methods__bar[data-active="cbu"] {
-  transform: translateX(100%);
 }
 
 .hc-payment__panel {

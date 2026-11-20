@@ -69,6 +69,14 @@ export type HcDocumentType = (typeof HC_DOCUMENT_TYPES)[number];
  */
 export const HC_CARD_EXTRA_FIELDS: "auto" | "hidden" | "optional" | "required" = "hidden";
 
+/**
+ * Medios de pago del paso 3, en orden. "card" = tarjeta crédito/débito,
+ * "cbu" = transferencia (débito por CBU). HC pidió sacar la transferencia
+ * por ahora (20/11): para volver a ofrecerla, agregar "cbu".
+ * Con un solo medio no se muestran tabs.
+ */
+export const HC_PAYMENT_METHODS: ("card" | "cbu")[] = ["card"];
+
 export const HC_RECEIPTS_EMAIL = "recibos@haciendocamino.org.ar";
 
 export function formatHcMoney(value: number): string {
