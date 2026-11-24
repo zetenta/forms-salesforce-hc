@@ -7,7 +7,8 @@
 import { nextTick, reactive } from "vue";
 import HcButton from "~/components/hc/HcButton.vue";
 import { HC_DOCUMENT_TYPES, type HcDocumentType } from "~/data/hc-donar";
-import { validateCuil, validateEmail } from "~/composables/validators";
+import { validateEmail } from "~/composables/validators";
+import { docError, phoneError } from "~/composables/hcValidators";
 
 export interface HcPersonalData {
   firstName: string;
@@ -38,32 +39,6 @@ const ORDER: Key[] = ["firstName", "lastName", "docNumber", "email", "phoneCode"
 function set<K extends keyof HcPersonalData>(key: K, value: HcPersonalData[K]) {
   emit("update:modelValue", { ...props.modelValue, [key]: value });
   if (key in errors) delete errors[key as Key];
-}
-
-function digits(v: string) {
-  return v.replace(/\D/g, "");
-}
-
-function docError(type: HcDocumentType, raw: string): string | undefined {
-  const value = type === "Pasaporte" ? raw.replace(/[\s.-]/g, "").toUpperCase() : digits(raw);
-  if (!value) return "Ingresá tu número de documento.";
-  if (type === "DNI" && !/^\d{7,8}$/.test(value)) return "El DNI tiene que tener 7 u 8 números.";
-  if ((type === "CUIT" || type === "CUIL") && !validateCuil(value)) {
-    return `El ${type} tiene que tener 11 números, sin guiones.`;
-  }
-  if (type === "Pasaporte" && !/^[A-Z0-9]{6,13}$/.test(value)) return "Revisá el número de pasaporte.";
-  return undefined;
-}
-
-function phoneError(code: string, phone: string): { code?: string; phone?: string } {
-  const out: { code?: string; phone?: string } = {};
-  if (!/^\+?\d{1,4}$/.test(code.trim())) out.code = "Ej. +54";
-  const n = digits(phone);
-  const isAr = digits(code) === "54";
-  if (!n) out.phone = "Ingresá tu teléfono.";
-  else if (isAr && n.length !== 10) out.phone = "Código de área sin 0 y número sin 15 (10 números).";
-  else if (!isAr && (n.length < 6 || n.length > 14)) out.phone = "Revisá el número de teléfono.";
-  return out;
 }
 
 function validate(): boolean {

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 /**
- * /donar · Formulario de donaciones de Haciendo Camino.
+ * /donar · Formulario de donaciones de Haciendo Camino (diseño multistep,
+ * con animaciones). Hay un segundo diseño, de una sola página y sin
+ * animaciones, en /donar-simple; los dos comparten la lógica
+ * (`composables/useHcDonation.ts`) y el elemento de pago
+ * (`composables/usePaymentElement.ts`).
  *
  * Se muestra dentro de un iframe en el sitio de WordPress (bloque Portada).
  * Usa el mismo backend que `alta-donante-alternativo`
@@ -15,18 +19,19 @@
  *   { type: "hc-donar:success", amount, frequency }
  *
  * Configuración (montos, textos, documento, etc.): `data/hc-donar.ts`.
- * Parámetros de la URL: `campaign` (Id de campaña) y `montos`
- * ("50000,38000,25000", los cargan en WordPress).
+ * Parámetros de la URL: `campaign` (Id de campaña), `montos`
+ * ("50000,38000,25000") y `medios` ("card" o "card,cbu"); los cargan en
+ * WordPress.
  */
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId } from "vue";
+import { ref, useId } from "vue";
 import "~/assets/css/hc.css";
-import HcAmountStep, { type HcAmountData } from "~/components/hc/HcAmountStep.vue";
-import HcPersonalStep, { type HcPersonalData } from "~/components/hc/HcPersonalStep.vue";
+import HcAmountStep from "~/components/hc/HcAmountStep.vue";
+import HcPersonalStep from "~/components/hc/HcPersonalStep.vue";
 import HcPaymentStep from "~/components/hc/HcPaymentStep.vue";
 import HcSummary from "~/components/hc/HcSummary.vue";
 import HcFinale from "~/components/hc/HcFinale.vue";
 import type { DebiPaymentToken } from "~/composables/useDebiClient";
-import { HC_DEFAULT_AMOUNT, hcPresets } from "~/data/hc-donar";
+import { useHcDonation } from "~/composables/useHcDonation";
 
 definePageMeta({ embed: true });
 
@@ -35,38 +40,29 @@ useHead({
   meta: [{ name: "robots", content: "noindex" }],
 });
 
-const ENDPOINT = "/api/flow/alta-donante-alternativo";
 const STEPS = ["monto", "datos", "pago"] as const;
 type Step = (typeof STEPS)[number] | "gracias";
 
 const uid = useId() ?? "hc";
-const route = useRoute();
-const campaign = computed(() => {
-  const q = route.query.campaign;
-  return (Array.isArray(q) ? String(q[0] ?? "") : String(q ?? "")).trim();
-});
-/** Montos sugeridos: los manda WordPress (opciones ACF) en `?montos=`. */
-const presets = computed(() => {
-  const q = route.query.montos;
-  return hcPresets(Array.isArray(q) ? q[0] : q);
-});
+const {
+  presets,
+  paymentMethods,
+  amount,
+  personal,
+  amountValue,
+  contactId,
+  errorMessage,
+  savePersonalRequest,
+  finalizeRequest,
+  post,
+  notifySuccess,
+  root,
+} = useHcDonation();
 
 const step = ref<Step>("monto");
 const direction = ref<"fwd" | "back">("fwd");
 const sliding = ref(false);
 
-const amount = ref<HcAmountData>({ frequency: "Mensual", choice: HC_DEFAULT_AMOUNT, custom: "" });
-const personal = ref<HcPersonalData>({
-  firstName: "",
-  lastName: "",
-  docType: "DNI",
-  docNumber: "",
-  email: "",
-  phoneCode: "+54",
-  phone: "",
-});
-
-const contactId = ref<string | null>(null);
 const savingPersonal = ref(false);
 const personalError = ref<string | null>(null);
 const paymentError = ref<string | null>(null);
@@ -74,15 +70,7 @@ const paymentError = ref<string | null>(null);
 const finale = ref<null | "loading" | "success">(null);
 const finaleHeight = ref<number | null>(null);
 
-const root = ref<HTMLElement | null>(null);
 const live = ref("");
-
-const amountValue = computed(() => {
-  const a = amount.value;
-  if (a.choice === null) return 0;
-  if (a.choice !== "otro") return a.choice;
-  return Number(a.custom.replace(/\D/g, "")) || 0;
-});
 
 function go(next: Step) {
   const from = STEPS.indexOf(step.value as (typeof STEPS)[number]);
@@ -99,45 +87,11 @@ function go(next: Step) {
   live.value = labels[next];
 }
 
-function errorMessage(error: unknown, fallback: string): string {
-  const data = (error as { data?: { message?: string } })?.data;
-  if (data?.message) return data.message;
-  if (error instanceof Error && error.message && !/^\[?(POST|GET)\b|fetch failed/i.test(error.message)) {
-    return error.message;
-  }
-  return fallback;
-}
-
-function normalizedDocument(): string {
-  const { docType, docNumber } = personal.value;
-  return docType === "Pasaporte"
-    ? docNumber.replace(/[\s.-]/g, "").toUpperCase()
-    : docNumber.replace(/\D/g, "");
-}
-
 async function savePersonal() {
   personalError.value = null;
   savingPersonal.value = true;
   try {
-    const p = personal.value;
-    const res = await $fetch<{ error: boolean; message?: string; data?: { contactId: string } }>(ENDPOINT, {
-      method: "POST",
-      body: {
-        stage: "personal",
-        personal: {
-          firstName: p.firstName.trim(),
-          lastName: p.lastName.trim(),
-          email: p.email.trim().toLowerCase(),
-          phone: `+${p.phoneCode.replace(/\D/g, "")} ${p.phone.replace(/\D/g, "")}`,
-        },
-        phoneFixed: null,
-        campaign: campaign.value || null,
-      },
-    });
-    if (res.error || !res.data?.contactId) {
-      throw new Error(res.message ?? "No pudimos guardar tus datos. Intentá de nuevo.");
-    }
-    contactId.value = res.data.contactId;
+    await savePersonalRequest();
     go("pago");
   } catch (error) {
     personalError.value = errorMessage(error, "No pudimos guardar tus datos. Revisá tu conexión e intentá de nuevo.");
@@ -156,24 +110,12 @@ async function finalize(token: DebiPaymentToken) {
   finale.value = "loading";
   live.value = "Estamos procesando tu donación…";
   try {
-    const res = await $fetch<{ error: boolean; message?: string }>(ENDPOINT, {
-      method: "POST",
-      body: {
-        stage: "finalize",
-        contactId: contactId.value,
-        amount: amountValue.value,
-        frequency: amount.value.frequency,
-        paymentMethodToken: token,
-        dni: normalizedDocument(),
-        campaign: campaign.value || null,
-      },
-    });
-    if (res.error) throw new Error(res.message ?? "No pudimos completar tu donación.");
+    await finalizeRequest(token);
     finale.value = "success";
     step.value = "gracias";
     live.value = "¡Muchas gracias por tu ayuda!";
     post({ type: "hc-donar:step", step: "gracias" });
-    post({ type: "hc-donar:success", amount: amountValue.value, frequency: amount.value.frequency });
+    notifySuccess();
   } catch (error) {
     finale.value = null;
     paymentError.value = errorMessage(
@@ -182,31 +124,6 @@ async function finalize(token: DebiPaymentToken) {
     );
   }
 }
-
-// ---------- Comunicación con el sitio que embebe ----------
-function post(message: Record<string, unknown>) {
-  if (typeof window === "undefined" || window.parent === window) return;
-  window.parent.postMessage(message, "*");
-}
-
-let observer: ResizeObserver | null = null;
-let lastHeight = 0;
-function reportHeight() {
-  const h = Math.ceil(root.value?.getBoundingClientRect().height ?? 0);
-  if (h && h !== lastHeight) {
-    lastHeight = h;
-    post({ type: "hc-donar:resize", height: h });
-  }
-}
-
-onMounted(() => {
-  if (root.value && "ResizeObserver" in window) {
-    observer = new ResizeObserver(reportHeight);
-    observer.observe(root.value);
-  }
-  nextTick(reportHeight);
-});
-onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>
@@ -249,6 +166,7 @@ onBeforeUnmount(() => observer?.disconnect());
           v-else-if="step === 'pago'"
           key="pago"
           :uid="uid"
+          :methods="paymentMethods"
           :busy="finale === 'loading'"
           :server-error="paymentError"
           @back="go('datos')"

@@ -77,6 +77,24 @@ export const HC_CARD_EXTRA_FIELDS: "auto" | "hidden" | "optional" | "required" =
  */
 export const HC_PAYMENT_METHODS: ("card" | "cbu")[] = ["card"];
 
+/**
+ * Medios de pago a partir del parámetro `medios` de la URL ("card",
+ * "card,cbu"). Lo manda WordPress (opción ACF global) para que los dos
+ * diseños del formulario ofrezcan siempre lo mismo. Si falta o no es válido
+ * (valor desconocido, repetido, más de dos) se usan los de
+ * `HC_PAYMENT_METHODS`.
+ */
+export function hcPaymentMethods(param: string | null | undefined): ("card" | "cbu")[] {
+  if (!param) return HC_PAYMENT_METHODS;
+  const values = param.split(",").map((v) => v.trim().toLowerCase());
+  const valid =
+    values.length > 0 &&
+    values.length <= 2 &&
+    new Set(values).size === values.length &&
+    values.every((v) => v === "card" || v === "cbu");
+  return valid ? (values as ("card" | "cbu")[]) : HC_PAYMENT_METHODS;
+}
+
 export const HC_RECEIPTS_EMAIL = "recibos@haciendocamino.org.ar";
 
 export function formatHcMoney(value: number): string {
