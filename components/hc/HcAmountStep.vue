@@ -223,6 +223,7 @@ function onKeyTabs(e: KeyboardEvent) {
 
     <div class="hc-actions hc-actions--single">
       <HcButton type="submit">Donar</HcButton>
+      <p>Este formulario permite tarjetas internacionales</p>
     </div>
   </form>
 </template>

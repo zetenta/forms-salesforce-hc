@@ -27,9 +27,9 @@ export interface HcPreset {
  * `HC_DEFAULT_AMOUNT` es el que arranca elegido (null: ninguno).
  */
 export const HC_PRESETS: HcPreset[] = [
-  { value: 50000, color: "orange", description: "Ayudás a que más niños/as reciban atención y seguimiento." },
-  { value: 38000, color: "blue", description: "Ayudás a sostener el acompañamiento de una familia." },
-  { value: 25000, color: "green", description: "Ayudás a llevar nutrición y acompañamiento a un niño/a." },
+  { value: 50000, color: "orange", description: "Cubrís el tratamiento integral de 1 niño." },
+  { value: 38000, color: "blue", description: "Cubrís la atención nutricional de 1 niño. " },
+  { value: 25000, color: "green", description: "1 mes de leche para 1 niño. " },
 ];
 
 /** Tope de seguridad para los montos que llegan por URL. */
